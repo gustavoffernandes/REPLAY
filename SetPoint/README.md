@@ -10,9 +10,7 @@ Por enquanto inclui:
 - **Clientes**: cadastro com busca; **clientes fixos** (mensalistas) têm horários semanais recorrentes que geram reservas automáticas.
 - **Turmas**: turmas por esporte, com professor, vagas, mensalidade, alunos matriculados e horários semanais numa quadra.
 - **Quadras**: cadastro, edição, preço por hora e horário de funcionamento. A quadra é de areia e o esporte é escolhido em cada reserva.
-
-- **Replays**: cada quadra pode ter uma câmera; a botoeira (física ou o botão "Salvar replay" do painel) salva os últimos 30 segundos em vídeo.
-
+- **Replays**: cada quadra pode ter uma câmera IP; a botoeira física (ou o botão "Salvar replay" do painel) salva os **últimos 30 segundos** em vídeo, que aparece na tela Replays para tocar, baixar ou excluir.
 - **Multiempresa**: empresas contratantes com filiais; cada usuário só enxerga e altera o que é da sua empresa/filiais.
 - **Acesso e administração**: login, papéis e permissões, gestão de empresas, filiais e usuários.
 
@@ -30,14 +28,17 @@ Por enquanto inclui:
 SetPoint/
 ├── backend/   API Laravel (rotas em routes/api.php, migrations e seeder em database/)
 ├── web/       Front-end Vue + Vite
-└── captura/   Serviço Python de captura de replays (um por câmera)
+├── captura/   Serviço Python de captura de replays (uma cópia por câmera)
+└── docs/      Documentação (replays: hardware, fluxo e mapa do código)
 ```
 
-Passo a passo completo para Windows (incluindo câmera e replays): [COMO_RODAR_WINDOWS.txt](COMO_RODAR_WINDOWS.txt).
+**Guias:** [COMO_RODAR_WINDOWS.txt](COMO_RODAR_WINDOWS.txt) (passo a passo completo no Windows, da câmera ao replay) e [docs/REPLAYS.md](docs/REPLAYS.md) (arquitetura dos replays).
 
 ## Pré-requisitos
 
 PHP 8.3+, Composer, Node 20+ e MySQL 8 (no Laragon basta deixar o MySQL iniciado).
+
+Para os **replays**, também: Python 3.10+ (o FFmpeg vem junto, pelo pacote `imageio-ffmpeg`) e uma câmera IP com RTSP. Dá para testar tudo **sem câmera** com `FONTE=teste`.
 
 ## Como rodar manualmente
 
@@ -54,7 +55,7 @@ Confira `DB_*` no `.env` (padrão: `root` sem senha, `127.0.0.1:3306`) e rode:
 php artisan migrate --seed    # cria as tabelas e carrega dados de exemplo
 php artisan serve             # API em http://localhost:8000
 ```
-Para recriar o banco do zero: `php artisan migrate:fresh --seed`. Se você já tinha um banco de uma versão anterior (sem empresas/filiais), use este comando: as migrations de multiempresa exigem o banco vazio.
+Para recriar o banco do zero: `php artisan migrate:fresh --seed`. Se você já tinha um banco de uma versão anterior (sem empresas/filiais), use este comando: as migrations de multiempresa exigem o banco vazio. Se o seu banco já tem empresas/filiais e só falta o módulo de replays, rode apenas `php artisan migrate` (não apaga nada).
 
 ### 2. Front-end (em outro terminal)
 ```bash
@@ -65,6 +66,13 @@ npm run dev                   # http://localhost:5173
 O Vite repassa `/api` para `http://localhost:8000`, então o back-end precisa estar rodando.
 
 Acesse **http://localhost:5173**.
+
+### 3. Captura de replays (opcional, em outro terminal)
+
+Só é necessário para usar câmeras. Veja [Replays](#replays-câmera-por-quadra) para instalar e ligar a câmera; no dia a dia basta, dentro de `captura/` com o ambiente Python ativo:
+```bash
+python main.py
+```
 
 ## Agendamento online (clientes avulsos)
 
@@ -85,18 +93,72 @@ Fluxo do cliente: escolhe esporte, data, quadra e horário (1 a 3 h) → informa
 Cada quadra pode ter uma câmera IP. Um serviço local em Python (`captura/`) grava a câmera o tempo todo num buffer circular e, ao clique da botoeira, junta os **últimos 30 segundos** num `.mp4` e envia para o SetPoint.
 
 ```
-Câmera ──RTSP──► captura (Python) ──► buffer de ~30s em fragmentos
+Câmera ──RTSP──► captura (Python) ──► buffer de ~30 s em fragmentos
                      ▲                   │ clique: FFmpeg junta os fragmentos (sem reprocessar)
   botoeira física ───┤                   ▼
   "Salvar replay" ───┘ (SetPoint → POST /disparar)   POST /api/replays/upload ──► tela Replays
 ```
 
-- **Botoeira virtual:** tela **Replays → Salvar replay**. O back-end repassa o clique ao serviço de captura da quadra, o mesmo caminho da botoeira física (placa USB Zero Delay, `BOTOEIRA_MODO=joystick` no `captura/.env`).
-- **Configuração:** em **Quadras → Editar → Câmera de replay**, informe o endereço do serviço de captura (ex.: `http://127.0.0.1:8765`) e gere o **token da câmera**. O token aparece uma única vez: cole em `REPLAY_TOKEN` no `captura/.env`. Ele identifica a quadra (e portanto a filial/empresa) dos vídeos recebidos e autoriza o SetPoint a disparar a câmera. No banco fica criptografado e em hash, e nunca sai na API.
-- **Vários campos:** uma cópia do serviço de captura por câmera, cada uma com seu `.env`, porta (`GATILHO_PORTA`) e token.
-- **Vídeos:** ficam em `backend/storage/app/private/replays/{filial}/{quadra}/` (fora da pasta pública). A tela toca e baixa por **links assinados e temporários**, porque o player de vídeo do navegador não envia o token de login.
+Hardware, fluxo detalhado, segurança e mapa do código: [docs/REPLAYS.md](docs/REPLAYS.md).
+
+### Como colocar uma câmera para funcionar
+
+1. **Ligar a câmera:** fonte 12V + cabo de rede até o roteador, na mesma rede do computador. No painel da câmera: RTSP ligado e codec **H.264** (H.265 não toca no navegador). Teste a URL no VLC.
+2. **Instalar o serviço de captura** (uma vez):
+   ```bash
+   cd captura
+   python3 -m venv .venv && source .venv/bin/activate     # Windows (cmd): .venv\Scripts\activate
+   pip install -r requirements.txt
+   cp .env.example .env                                   # Windows (cmd): copy .env.example .env
+   ```
+3. **No SetPoint:** *Quadras → Editar → Câmera de replay*: informe o endereço do serviço (`http://127.0.0.1:8765`), salve, e clique em **Gerar token** (aparece uma única vez).
+4. **No `captura/.env`:**
+   ```ini
+   FONTE=rtsp
+   RTSP_URL=rtsp://admin:SUA_SENHA@IP_DA_CAMERA:554/cam1/onvif-h264   # URL padrão: o caminho varia por câmera
+   REPLAY_TOKEN=<token gerado no passo 3>
+   ```
+5. **Testar a câmera e rodar:**
+   ```bash
+   python testar_camera.py     # confere rede, porta, senha, caminho e codec
+   python main.py              # deixe rodando
+   ```
+6. Em **Replays**, a câmera mostra "Gravando". Espere ~30 s e clique em **Salvar replay**.
+
+### Botoeira física (placa USB Zero Delay)
+
+O botão cogumelo (contato NA) vai ligado à placa, que vai na USB do computador. É o mesmo caminho do botão do painel; só muda a origem do clique.
+
+```bash
+pip install pygame && python testar_botoeira.py    # mostra o número do botão
+```
+
+No `captura/.env`: `BOTOEIRA_MODO=joystick` e `BOTOEIRA_JOYSTICK_BOTAO=<número>`. Placa em modo teclado: `pip install pynput`, `BOTOEIRA_MODO=teclado` e `BOTOEIRA_TECLA=`. Sem placa, `BOTOEIRA_MODO=terminal` simula a botoeira com ENTER.
+
+### Detalhes
+
+- **Botoeira virtual:** o back-end repassa o clique do painel ao serviço de captura da quadra.
+- **Token da câmera:** identifica a quadra (e portanto a filial/empresa) dos vídeos recebidos e autoriza o SetPoint a disparar a câmera. No banco fica criptografado e em hash, e nunca sai na API.
+- **Várias câmeras:** uma cópia do serviço de captura por câmera, cada uma com seu `.env`, porta (`GATILHO_PORTA`) e token.
+- **Vídeos:** ficam em `backend/storage/app/private/replays/{filial}/{quadra}/` (fora da pasta pública). A tela toca e baixa por **links assinados e temporários**, porque o player do navegador não envia o token de login.
 - **Permissões:** `replays.view` (ver e baixar), `replays.create` (botoeira virtual) e `replays.delete`. Proprietário e Gerente têm as três; Atendente, ver e salvar. Configurar a câmera exige `courts.update`.
-- **Tamanho do upload:** um replay de 30 s em Full HD tem dezenas de MB, e o PHP vem limitado a 2 MB. No `php.ini`, defina `upload_max_filesize = 512M` e `post_max_size = 520M` e reinicie o `php artisan serve`. Sem isso, a API responde `413` com a explicação e o serviço de captura mostra a dica no log.
+- **Tamanho do upload:** um replay de 30 s em Full HD tem dezenas de MB, e o PHP vem limitado a 2 MB. No `php.ini`, defina `upload_max_filesize = 512M` e `post_max_size = 520M` e reinicie o `php artisan serve`. Sem isso, a API responde `413` com a explicação e o serviço de captura mostra a dica no log (o vídeo fica guardado e é reenviado sozinho).
+- **Se o SetPoint estiver fora do ar**, a captura guarda o vídeo e tenta de novo a cada 30 s.
+
+### Problemas comuns
+
+| Sintoma | Causa e solução |
+|---|---|
+| Câmera "offline" na tela | O `python main.py` não está rodando, ou o endereço da quadra não bate com `GATILHO_PORTA`. |
+| "Sem vídeo chegando" | Rode `python testar_camera.py`: IP, senha ou caminho RTSP errados. |
+| `No route to host` (macOS) | Falta a permissão de **Rede Local** para o app do terminal (Ajustes do Sistema → Privacidade e Segurança → Rede Local). |
+| Vídeo não toca no navegador | A câmera está em H.265: mude para H.264. |
+| Log: "Token recusado" (401) | Gere o token de novo em Quadras e atualize `REPLAY_TOKEN`. |
+| Log: "maior que o limite do PHP" (413) | Ajuste o `php.ini` (veja acima). |
+| "Não consegui abrir a porta 8765" | Já existe outra captura aberta: feche com Ctrl+C. |
+| "Buffer vazio" | Clicou logo após ligar: espere uns 30 s. |
+
+> Troque a senha padrão da câmera no painel dela e atualize a `RTSP_URL`. O `captura/.env` guarda senha e token e não vai para o Git.
 
 ## Acesso, papéis e empresas
 

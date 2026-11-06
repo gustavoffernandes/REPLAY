@@ -8,8 +8,8 @@ O sistema tem 3 partes. No dia a dia, cada uma roda em uma janela:
   [2] web       Tela do SetPoint (Vue)             http://localhost:5173
   [3] captura   Grava a camera e salva os replays  (um por camera)
 
-Exemplo de pasta usado neste guia: C:\SetPoint
-(use uma pasta sem espacos e sem acentos)
+Neste guia o projeto fica em C:\replay\REPLAY\SetPoint
+(use uma pasta sem espacos e sem acentos; veja a Parte 3, passo 3.0)
 
 
 ---------------------------------------------------------------------
@@ -37,6 +37,10 @@ Exemplo de pasta usado neste guia: C:\SetPoint
          post_max_size = 520M
    - Salve o arquivo.
 
+4. Git
+   - Baixe e instale em https://git-scm.com (opcoes padrao).
+   - Confira:  git --version
+
    O FFmpeg NAO precisa ser instalado: ele vem junto com o Python
    (pacote imageio-ffmpeg) no passo 3.3.
 
@@ -59,9 +63,24 @@ Exemplo de pasta usado neste guia: C:\SetPoint
  PARTE 3 - PREPARAR O SETPOINT  (uma vez so)
 ---------------------------------------------------------------------
 
+3.0 Baixar o projeto (cmd ou terminal do Laragon)
+
+    mkdir C:\replay
+    cd C:\replay
+    git clone -b atualização https://github.com/gustavoffernandes/REPLAY.git
+
+    * O nome da branch tem acento. Se o terminal mostrar o nome
+      errado ou der "Remote branch not found", rode antes:
+          chcp 65001
+      Ainda assim nao deu? Alternativa sem Git: no site do GitHub,
+      escolha a branch "atualização", clique em Code > Download ZIP e
+      extraia em C:\replay e renomeie a pasta extraida para REPLAY.
+    * A pasta SetPoint fica dentro de C:\replay\REPLAY. Nas proximas
+      vezes, para atualizar:  cd C:\replay\REPLAY  e  git pull
+
 3.1 Backend (terminal do Laragon)
 
-    cd C:\SetPoint\backend
+    cd C:\replay\REPLAY\SetPoint\backend
     composer install
     copy .env.example .env
     php artisan key:generate
@@ -74,12 +93,12 @@ Exemplo de pasta usado neste guia: C:\SetPoint
 
 3.2 Tela (terminal do Laragon)
 
-    cd C:\SetPoint\web
+    cd C:\replay\REPLAY\SetPoint\web
     npm install
 
 3.3 Captura (use o Prompt de Comando "cmd", nao o PowerShell)
 
-    cd C:\SetPoint\captura
+    cd C:\replay\REPLAY\SetPoint\captura
     python -m venv .venv
     .venv\Scripts\activate
     pip install -r requirements.txt
@@ -103,7 +122,7 @@ Exemplo de pasta usado neste guia: C:\SetPoint
 
 4. Abra o arquivo de configuracao da captura:
 
-       notepad C:\SetPoint\captura\.env
+       notepad C:\replay\REPLAY\SetPoint\captura\.env
 
    e altere estas linhas:
 
@@ -125,7 +144,7 @@ Exemplo de pasta usado neste guia: C:\SetPoint
  PARTE 5 - TESTAR A CAMERA
 ---------------------------------------------------------------------
 
-    cd C:\SetPoint\captura
+    cd C:\replay\REPLAY\SetPoint\captura
     .venv\Scripts\activate
     python testar_camera.py
 
@@ -140,15 +159,15 @@ Exemplo de pasta usado neste guia: C:\SetPoint
   Antes: Laragon aberto, com "Start All" (MySQL ligado).
 
   Janela 1 - backend (terminal do Laragon)
-      cd C:\SetPoint\backend
+      cd C:\replay\REPLAY\SetPoint\backend
       php artisan serve
 
   Janela 2 - tela (terminal do Laragon)
-      cd C:\SetPoint\web
+      cd C:\replay\REPLAY\SetPoint\web
       npm run dev
 
   Janela 3 - captura (cmd)
-      cd C:\SetPoint\captura
+      cd C:\replay\REPLAY\SetPoint\captura
       .venv\Scripts\activate
       python main.py
 
@@ -176,7 +195,7 @@ Exemplo de pasta usado neste guia: C:\SetPoint
    + GND. Placa na USB do PC.
 2. Confira: Win + R > joy.cpl  (a placa deve aparecer)
 3. No cmd:
-       cd C:\SetPoint\captura
+       cd C:\replay\REPLAY\SetPoint\captura
        .venv\Scripts\activate
        pip install pygame
        python testar_botoeira.py

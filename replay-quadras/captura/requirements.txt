@@ -1,9 +1,0 @@
-requests>=2.31
-watchdog>=4.0
-python-dotenv>=1.0
-# FFmpeg embutido (alternativa caso não tenha o ffmpeg instalado no sistema)
-imageio-ffmpeg>=0.5
-
-# --- Opcionais: só quando a botoeira física chegar ---------------------------
-# pygame>=2.5     # BOTOEIRA_MODO=joystick (placa Zero Delay em modo gamepad)
-# pynput>=1.7     # BOTOEIRA_MODO=teclado  (placa em modo teclado)
