@@ -136,7 +136,13 @@ FONTE=rtsp
 RTSP_URL=rtsp://admin:SUA_SENHA@IP_DA_CAMERA:554/cam1/onvif-h264   # PROVISÓRIO: testar usuário/senha/IP/caminho
 ```
 
-Antes de rodar o sistema, teste a URL sozinha (deve abrir uma janela com a imagem;
+O jeito mais simples de testar é o script de diagnóstico, que usa a URL do `.env` e diz o que está errado (rede, porta, senha, caminho, codec):
+
+```bash
+python testar_camera.py
+```
+
+Para ver a imagem, teste a URL sozinha (deve abrir uma janela com a imagem;
 `ffplay` vem com o `brew install ffmpeg`):
 
 ```bash
