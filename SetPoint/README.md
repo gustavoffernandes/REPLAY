@@ -2,6 +2,8 @@
 
 Sistema de gestão e agendamento de quadras de areia (vôlei, futevôlei e beach tennis).
 
+> **Para rodar o sistema por inteiro** (câmera, banco, back-end, front-end e captura, na ordem certa), veja o [README principal](../README.md).
+
 Por enquanto inclui:
 - **Dashboard** com ocupação, reservas e receita do dia/mês, receita dos últimos 14 dias, receita por esporte, horários de pico e próximas reservas.
 - **Agenda** em grade (horas × quadras) com reserva por clique e bloqueio de conflito de horário.
@@ -112,10 +114,10 @@ Hardware, fluxo detalhado, segurança e mapa do código: [docs/REPLAYS.md](docs/
    cp .env.example .env                                   # Windows (cmd): copy .env.example .env
    ```
 3. **No SetPoint:** *Quadras → Editar → Câmera de replay*: informe o endereço do serviço (`http://127.0.0.1:8765`), salve, e clique em **Gerar token** (aparece uma única vez).
-4. **No `captura/.env`:**
+4. **No `captura/.env`** (o `.env.example` já vem com `FONTE=rtsp` e o IP da câmera atual, `192.168.1.10`): troque `SUA_SENHA` pela senha da câmera e cole o token:
    ```ini
    FONTE=rtsp
-   RTSP_URL=rtsp://admin:SUA_SENHA@IP_DA_CAMERA:554/cam1/onvif-h264   # URL padrão: o caminho varia por câmera
+   RTSP_URL=rtsp://admin:SUA_SENHA@192.168.1.10:554/cam1/onvif-h264   # o caminho varia por câmera
    REPLAY_TOKEN=<token gerado no passo 3>
    ```
 5. **Testar a câmera e rodar:**

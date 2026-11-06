@@ -124,10 +124,11 @@ Neste guia o projeto fica em C:\replay\REPLAY\SetPoint
 
        notepad C:\replay\REPLAY\SetPoint\captura\.env
 
-   e altere estas linhas:
+   O arquivo copiado do .env.example ja vem com FONTE=rtsp e o IP da
+   camera atual (192.168.1.10). Altere:
 
-       FONTE=rtsp
        RTSP_URL=rtsp://admin:SUA_SENHA@192.168.1.10:554/cam1/onvif-h264
+         (troque SUA_SENHA pela senha da camera)
        REPLAY_TOKEN=(cole o token copiado)
 
    Salve e feche.
