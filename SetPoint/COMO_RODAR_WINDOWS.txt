@@ -67,14 +67,11 @@ Neste guia o projeto fica em C:\replay\REPLAY\SetPoint
 
     mkdir C:\replay
     cd C:\replay
-    git clone -b atualização https://github.com/gustavoffernandes/REPLAY.git
+    git clone https://github.com/gustavoffernandes/REPLAY.git
 
-    * O nome da branch tem acento. Se o terminal mostrar o nome
-      errado ou der "Remote branch not found", rode antes:
-          chcp 65001
-      Ainda assim nao deu? Alternativa sem Git: no site do GitHub,
-      escolha a branch "atualização", clique em Code > Download ZIP e
-      extraia em C:\replay e renomeie a pasta extraida para REPLAY.
+    * Sem Git? No site do GitHub, clique em Code > Download ZIP,
+      extraia em C:\replay e renomeie a pasta extraida (REPLAY-main)
+      para REPLAY.
     * A pasta SetPoint fica dentro de C:\replay\REPLAY. Nas proximas
       vezes, para atualizar:  cd C:\replay\REPLAY  e  git pull
 

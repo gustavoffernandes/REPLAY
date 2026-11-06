@@ -52,10 +52,12 @@ cd C:\replay
 ```
 
 ```bat
-git clone -b atualização https://github.com/gustavoffernandes/REPLAY.git
+git clone https://github.com/gustavoffernandes/REPLAY.git
 ```
 
-Se o terminal mostrar o nome da branch errado ou der "Remote branch not found", rode `chcp 65001` e tente de novo. Se ainda não funcionar, no site do GitHub escolha a branch **atualização**, clique em **Code → Download ZIP**, extraia em `C:\replay` e renomeie a pasta para `REPLAY`.
+Sem Git? No site do GitHub, clique em **Code → Download ZIP**, extraia em `C:\replay` e renomeie a pasta extraída (`REPLAY-main`) para `REPLAY`.
+
+Para receber atualizações depois: `cd C:\replay\REPLAY` e `git pull`.
 
 O projeto fica em `C:\replay\REPLAY\SetPoint`, com três pastas: `backend`, `web` e `captura`.
 
@@ -358,7 +360,6 @@ Reinicie o `python main.py`. Para conferir que o Windows reconheceu a placa: `Wi
 | Captura: "Não consegui abrir a porta 8765" | Já existe outra captura aberta. Feche com Ctrl+C. |
 | "Buffer vazio" ao salvar | Clicou logo após ligar: espere uns 30 segundos. |
 | `REPLAY_TOKEN` sumiu depois de recriar o banco | `migrate:fresh` apaga os tokens. Repita o passo 2.5. |
-| `git clone` não acha a branch `atualização` | Rode `chcp 65001` ou baixe o ZIP (passo 1.3). |
 
 ### Estrutura do projeto
 
