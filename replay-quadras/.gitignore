@@ -1,0 +1,8 @@
+# Projeto Laravel gerado pelo web/instalar.sh (só o overlay/ é versionado)
+web/portal/
+
+# Configuração local e dados do serviço de captura
+captura/.env
+captura/dados/
+captura/.venv/
+__pycache__/
