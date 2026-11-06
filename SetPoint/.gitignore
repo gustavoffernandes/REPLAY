@@ -1,0 +1,13 @@
+node_modules/
+web/dist/
+.env
+
+# Ferramentas locais / editor
+.vscode/
+.idea/
+*.log
+
+# Serviço de captura de replays (vídeos locais e ambiente Python)
+captura/dados/
+captura/.venv/
+__pycache__/

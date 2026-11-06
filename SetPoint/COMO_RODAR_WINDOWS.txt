@@ -1,0 +1,232 @@
+=====================================================================
+  SETPOINT + REPLAYS  -  COMO RODAR NO WINDOWS
+=====================================================================
+
+O sistema tem 3 partes. No dia a dia, cada uma roda em uma janela:
+
+  [1] backend   API do SetPoint (Laravel)          http://localhost:8000
+  [2] web       Tela do SetPoint (Vue)             http://localhost:5173
+  [3] captura   Grava a camera e salva os replays  (um por camera)
+
+Exemplo de pasta usado neste guia: C:\SetPoint
+(use uma pasta sem espacos e sem acentos)
+
+
+---------------------------------------------------------------------
+ PARTE 1 - INSTALAR OS PROGRAMAS  (uma vez so)
+---------------------------------------------------------------------
+
+1. Laragon (traz PHP, MySQL, Composer e Node)
+   - Baixe e instale em https://laragon.org (versao "Full").
+   - Abra o Laragon e clique em "Start All" (liga o MySQL).
+   - Use o terminal do Laragon (botao "Terminal") para os comandos.
+   - Confira:  php -v       (precisa ser 8.3 ou maior)
+               composer -V
+               node -v      (precisa ser 20 ou maior)
+
+2. Python 3.12
+   - Baixe em https://www.python.org/downloads/
+   - Na instalacao, MARQUE "Add Python to PATH".
+   - Confira:  python --version
+
+3. Liberar videos grandes no PHP  (OBRIGATORIO)
+   Um replay de 30s tem dezenas de MB; o PHP vem limitado a 2 MB.
+   - Laragon: Menu > PHP > php.ini
+   - Procure e altere estas duas linhas:
+         upload_max_filesize = 512M
+         post_max_size = 520M
+   - Salve o arquivo.
+
+   O FFmpeg NAO precisa ser instalado: ele vem junto com o Python
+   (pacote imageio-ffmpeg) no passo 3.3.
+
+
+---------------------------------------------------------------------
+ PARTE 2 - LIGAR A CAMERA
+---------------------------------------------------------------------
+
+   Tomada -> Fonte 12V -> Camera -> cabo de rede -> Roteador <- PC
+
+1. Ligue a fonte 12V e o cabo de rede da camera no roteador.
+2. O PC precisa estar na mesma rede (Wi-Fi ou cabo).
+3. No painel da camera: RTSP ligado e codec H.264 (nao H.265).
+4. Teste no VLC (Midia > Abrir fluxo de rede):
+       rtsp://admin:SUA_SENHA@192.168.1.10:554/cam1/onvif-h264
+   Se abrir a imagem, a camera esta pronta.
+
+
+---------------------------------------------------------------------
+ PARTE 3 - PREPARAR O SETPOINT  (uma vez so)
+---------------------------------------------------------------------
+
+3.1 Backend (terminal do Laragon)
+
+    cd C:\SetPoint\backend
+    composer install
+    copy .env.example .env
+    php artisan key:generate
+    mysql -uroot -e "CREATE DATABASE setpoint CHARACTER SET utf8mb4"
+    php artisan migrate --seed
+
+    * Ja tinha o banco do SetPoint de antes? Rode so:
+          php artisan migrate
+      (cria as tabelas de replay sem apagar nada)
+
+3.2 Tela (terminal do Laragon)
+
+    cd C:\SetPoint\web
+    npm install
+
+3.3 Captura (use o Prompt de Comando "cmd", nao o PowerShell)
+
+    cd C:\SetPoint\captura
+    python -m venv .venv
+    .venv\Scripts\activate
+    pip install -r requirements.txt
+    copy .env.example .env
+
+
+---------------------------------------------------------------------
+ PARTE 4 - LIGAR A CAMERA AO SETPOINT  (uma vez por camera)
+---------------------------------------------------------------------
+
+1. Suba o backend e a tela (Parte 6, janelas 1 e 2) e entre em
+   http://localhost:5173 com um usuario Proprietario ou Gerente
+   (exemplo do seed: owner@arena.test / password).
+
+2. Va em Quadras > Editar (na quadra da camera):
+     - "Endereco do servico de captura":  http://127.0.0.1:8765
+     - Clique em Salvar.
+
+3. Abra Editar de novo > "Gerar token" > "Copiar".
+   O token aparece UMA UNICA VEZ.
+
+4. Abra o arquivo de configuracao da captura:
+
+       notepad C:\SetPoint\captura\.env
+
+   e altere estas linhas:
+
+       FONTE=rtsp
+       RTSP_URL=rtsp://admin:SUA_SENHA@192.168.1.10:554/cam1/onvif-h264
+       REPLAY_TOKEN=(cole o token copiado)
+
+   Salve e feche.
+
+   * Quer testar sem camera? Deixe FONTE=teste (gera um video
+     sintetico). Todo o resto funciona igual.
+
+   * Mais de uma camera: copie a pasta captura (ex.: captura2), use
+     outra porta (GATILHO_PORTA=8766), outro token e informe
+     http://127.0.0.1:8766 na quadra correspondente.
+
+
+---------------------------------------------------------------------
+ PARTE 5 - TESTAR A CAMERA
+---------------------------------------------------------------------
+
+    cd C:\SetPoint\captura
+    .venv\Scripts\activate
+    python testar_camera.py
+
+  Esperado:  "Camera pronta"
+  Se aparecer H.265, troque o codec da camera para H.264.
+
+
+---------------------------------------------------------------------
+ PARTE 6 - RODAR NO DIA A DIA  (3 janelas abertas)
+---------------------------------------------------------------------
+
+  Antes: Laragon aberto, com "Start All" (MySQL ligado).
+
+  Janela 1 - backend (terminal do Laragon)
+      cd C:\SetPoint\backend
+      php artisan serve
+
+  Janela 2 - tela (terminal do Laragon)
+      cd C:\SetPoint\web
+      npm run dev
+
+  Janela 3 - captura (cmd)
+      cd C:\SetPoint\captura
+      .venv\Scripts\activate
+      python main.py
+
+  Se o Firewall do Windows perguntar, clique em "Permitir acesso".
+  Para parar: Ctrl+C em cada janela.
+
+
+---------------------------------------------------------------------
+ PARTE 7 - USAR
+---------------------------------------------------------------------
+
+1. Abra http://localhost:5173 e entre.
+2. Menu "Replays".
+3. A camera deve mostrar "Gravando" (verde).
+4. Espere uns 30 segundos (o buffer enche) e clique em "Salvar replay".
+5. Em poucos segundos o video aparece em "Videos": tocar, baixar
+   ou excluir.
+
+
+---------------------------------------------------------------------
+ PARTE 8 - QUANDO A BOTOEIRA FISICA CHEGAR
+---------------------------------------------------------------------
+
+1. Fios do botao (contato NA) num borne de botao da placa Zero Delay
+   + GND. Placa na USB do PC.
+2. Confira: Win + R > joy.cpl  (a placa deve aparecer)
+3. No cmd:
+       cd C:\SetPoint\captura
+       .venv\Scripts\activate
+       pip install pygame
+       python testar_botoeira.py
+   Aperte o botao e anote o numero.
+4. No captura\.env:
+       BOTOEIRA_MODO=joystick
+       BOTOEIRA_JOYSTICK_BOTAO=(numero anotado)
+5. Reinicie o "python main.py". Botao e site funcionam juntos.
+
+
+---------------------------------------------------------------------
+ PROBLEMAS COMUNS
+---------------------------------------------------------------------
+
+ Camera "offline" na tela Replays
+   -> A janela 3 (python main.py) nao esta rodando, ou o endereco da
+      quadra nao bate com GATILHO_PORTA do captura\.env.
+
+ Camera "Sem video chegando"
+   -> Rode python testar_camera.py. Camera desligada, IP ou senha
+      errados na RTSP_URL.
+
+ Log da captura: "Video maior que o limite do PHP" (HTTP 413)
+   -> Faltou a Parte 1, passo 3 (php.ini). Ajuste e reinicie a
+      janela 1. O video fica guardado e e reenviado sozinho.
+
+ Log da captura: "Token recusado" (HTTP 401)
+   -> Gere o token de novo (Parte 4) e atualize REPLAY_TOKEN.
+
+ "Nao consegui abrir a porta 8765"
+   -> Ja existe outra captura aberta. Feche com Ctrl+C.
+
+ "Buffer vazio"
+   -> Clicou logo apos ligar. Espere uns 30 segundos.
+
+ Video nao toca no navegador
+   -> Camera em H.265. Troque para H.264 no painel da camera.
+
+ ".venv\Scripts\activate" nao funciona
+   -> Use o cmd (Prompt de Comando), nao o PowerShell.
+
+ Erro de banco ao rodar o backend
+   -> MySQL desligado: no Laragon, clique em "Start All".
+
+
+---------------------------------------------------------------------
+ SEGURANCA
+---------------------------------------------------------------------
+
+ - Troque a senha padrao da camera no painel dela e atualize a
+   RTSP_URL.
+ - Os arquivos .env guardam senhas e tokens: nao compartilhe.
+ - Troque as senhas dos usuarios de exemplo antes de usar de verdade.
